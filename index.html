@@ -3,55 +3,343 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Display Current URL</title>
-    <script>
-        function displayURL() {
-            // Get the current URL using window.location.href
-            const currentURL = window.location.href;
-
-            // Get the element where the URL will be displayed
-            const urlDisplayElement = document.getElementById("urlDisplay");
-
-            // Check if the element exists
-            if (urlDisplayElement) {
-                // Set the text content of the element to the current URL
-                urlDisplayElement.textContent = "The current URL is: " + currentURL;
-            } else {
-                console.error("Element with id 'urlDisplay' not found!");
-            }
-        }
-    </script>
+    <title>Telegram Mini App - User Info</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/telegram-web-app/6.7.0/telegram-web-app.js"></script>
     <style>
-      body {
-        font-family: sans-serif;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        background-color: #f0f0f0;
-        margin: 0; /* Reset default body margin */
-      }
-
-      .container {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        text-align: center;
-      }
-
-      #urlDisplay {
-        font-size: 16px;
-        color: #333;
-        word-wrap: break-word; /* Handle long URLs */
-        margin-top: 10px;
-      }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            padding: 20px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 10px;
+            background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: var(--tg-theme-button-color, #2AABEE);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .user-info {
+            margin-bottom: 20px;
+        }
+        
+        .info-row {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--tg-theme-hint-color, #999999);
+        }
+        
+        .info-row.params-row {
+            flex-direction: column;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .label {
+            font-weight: bold;
+            width: 100px;
+            flex-shrink: 0;
+        }
+        
+        .params-row .label {
+            margin-bottom: 5px;
+        }
+        
+        .value {
+            flex-grow: 1;
+            word-break: break-all;
+        }
+        
+        .params-value {
+            font-family: monospace;
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 8px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            overflow: auto;
+            max-height: 200px;
+        }
+        
+        .button {
+            background-color: var(--tg-theme-button-color, #2AABEE);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .error {
+            color: #ff3b30;
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            background-color: rgba(255, 59, 48, 0.1);
+            border-radius: 8px;
+            display: none;
+        }
     </style>
 </head>
-<body onload="displayURL()">
+<body>
     <div class="container">
-        <h1 class="title">Current URL</h1>
-        <p id="urlDisplay">Loading URL...</p>
+        <h1>User Information</h1>
+        
+        <div id="error" class="error">
+            Not launched inside Telegram
+        </div>
+        
+        <div id="userInfo" class="user-info">
+            <div class="info-row">
+                <div class="label">User ID:</div>
+                <div id="userId" class="value">-</div>
+            </div>
+            <div class="info-row">
+                <div class="label">First Name:</div>
+                <div id="firstName" class="value">-</div>
+            </div>
+            <div class="info-row">
+                <div class="label">Last Name:</div>
+                <div id="lastName" class="value">-</div>
+            </div>
+            <div class="info-row">
+                <div class="label">Username:</div>
+                <div id="username" class="value">-</div>
+            </div>
+            <div class="info-row params-row">
+                <div class="label">URL Params:</div>
+                <div id="urlParams" class="params-value">-</div>
+            </div>
+        </div>
+        
+        <button id="mainButton" class="button">Close</button>
     </div>
+
+    <div id="debugInfo" style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px;">
+        <h3>Debugging Info</h3>
+        <p>Current URL: <span id="currentUrl">-</span></p>
+        <p>Raw Query String: <span id="rawQueryString">-</span></p>
+        <button id="testParamsButton" class="button" style="margin-top: 10px; background-color: #555;">Test Parameters</button>
+    </div>
+
+    <script>
+        // Debug function to check URL parameters
+        function debugUrlParams() {
+            // Log the full URL and raw search string
+            console.log('Current URL:', window.location.href);
+            console.log('Raw search string:', window.location.search);
+            
+            try {
+                // Parse URL parameters
+                const urlSearchParams = new URLSearchParams(window.location.search);
+                const params = Object.fromEntries(urlSearchParams.entries());
+                console.log('Parsed parameters:', params);
+                
+                // Log each parameter individually
+                for (const [key, value] of urlSearchParams.entries()) {
+                    console.log(`Parameter: ${key} = ${value}`);
+                }
+                
+                return params;
+            } catch (e) {
+                console.error('Error parsing URL parameters:', e);
+                return {};
+            }
+        }
+        
+        // Function to parse and handle initData
+        function parseInitData(initDataStr) {
+            console.log('Attempting to parse initData:', initDataStr);
+            
+            try {
+                // For a direct JSON object in the user parameter
+                if (initDataStr.startsWith('user=')) {
+                    const userJson = decodeURIComponent(initDataStr.substring(5));
+                    console.log('Extracted user JSON string:', userJson);
+                    
+                    try {
+                        return JSON.parse(userJson);
+                    } catch (e) {
+                        console.error('Error parsing user JSON:', e);
+                    }
+                }
+                
+                // Try direct parsing first if it looks like JSON
+                if (initDataStr.startsWith('{') && initDataStr.endsWith('}')) {
+                    try {
+                        return JSON.parse(initDataStr);
+                    } catch (e) {
+                        console.error('Direct JSON parsing failed:', e);
+                    }
+                }
+                
+                // Standard Telegram initData parsing
+                try {
+                    const params = new URLSearchParams(initDataStr);
+                    console.log('initData as URLSearchParams:', Object.fromEntries(params.entries()));
+                    
+                    // Check for user parameter
+                    if (params.has('user')) {
+                        const userStr = params.get('user');
+                        console.log('Found user parameter:', userStr);
+                        return JSON.parse(userStr);
+                    }
+                } catch (e) {
+                    console.error('URLSearchParams parsing failed:', e);
+                }
+                
+                // Last resort - try to extract JSON from the string
+                const jsonMatch = initDataStr.match(/\{.*\}/);
+                if (jsonMatch) {
+                    try {
+                        return JSON.parse(jsonMatch[0]);
+                    } catch (e) {
+                        console.error('JSON extraction failed:', e);
+                    }
+                }
+                
+                return null;
+            } catch (e) {
+                console.error('All parsing attempts failed:', e);
+                return null;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get and display URL parameters
+            const urlParams = debugUrlParams();
+            
+            // Check if running inside Telegram WebApp
+            if (window.Telegram && window.Telegram.WebApp) {
+                const webApp = window.Telegram.WebApp;
+                
+                // Initialize the WebApp
+                webApp.ready();
+                
+                // Get user info
+                const user = webApp.initDataUnsafe.user;
+                
+                // Display the raw initData for debugging
+                document.getElementById('urlParams').textContent = JSON.stringify({
+                    initData: webApp.initData,
+                    startParam: webApp.startParam,
+                    version: webApp.version,
+                    platform: webApp.platform,
+                    colorScheme: webApp.colorScheme
+                }, null, 2) || 'No Telegram data available';
+                
+                if (user) {
+                    // Display user information
+                    document.getElementById('userId').textContent = user.id || 'Not available';
+                    document.getElementById('firstName').textContent = user.first_name || 'Not available';
+                    document.getElementById('lastName').textContent = user.last_name || 'Not available';
+                    document.getElementById('username').textContent = user.username || 'Not available';
+                } else {
+                    // Handle case when user data is not available
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('error').textContent = 'User data not available';
+                }
+                
+                // Set up main button
+                const mainButton = webApp.MainButton;
+                if (mainButton) {
+                    mainButton.setText('Close Mini App');
+                    mainButton.show();
+                    mainButton.onClick(function() {
+                        webApp.close();
+                    });
+                } else {
+                    // Fallback for main button
+                    document.getElementById('mainButton').addEventListener('click', function() {
+                        webApp.close();
+                    });
+                }
+                
+                // Apply color scheme from Telegram
+                document.body.style.backgroundColor = webApp.backgroundColor;
+                
+            } else {
+                // Not running inside Telegram
+                document.getElementById('error').style.display = 'block';
+                
+                // For testing purposes outside Telegram
+                // Display all URL parameters in a more readable format
+                document.getElementById('urlParams').textContent = JSON.stringify(urlParams, null, 2);
+                
+                // Try to handle initData parameter if present
+                if (urlParams.initData) {
+                    try {
+                        console.log('Found initData parameter, attempting to parse');
+                        const userData = parseInitData(urlParams.initData);
+                        console.log('Parsed user data:', userData);
+                        
+                        if (userData) {
+                            document.getElementById('userId').textContent = userData.id || 'Not available';
+                            document.getElementById('firstName').textContent = userData.first_name || 'Not available';
+                            document.getElementById('lastName').textContent = userData.last_name || 'Not available';
+                            document.getElementById('username').textContent = userData.username || 'Not available';
+                            document.getElementById('error').style.display = 'none';
+                        }
+                    } catch (e) {
+                        console.error('Error processing initData:', e);
+                        document.getElementById('error').style.display = 'block';
+                        document.getElementById('error').textContent = 'Error parsing initData: ' + e.message;
+                    }
+                } else {
+                    console.log('No initData parameter found in URL');
+                }
+                
+                // Mock data for testing outside Telegram
+                document.getElementById('mainButton').addEventListener('click', function() {
+                    alert('This button would close the mini app in Telegram');
+                });
+            }
+            
+            // Add test button functionality
+            document.getElementById('testParamsButton').addEventListener('click', function() {
+                const testData = {
+                    id: 987654321,
+                    first_name: "Test",
+                    last_name: "User",
+                    username: "testuser"
+                };
+                
+                document.getElementById('userId').textContent = testData.id;
+                document.getElementById('firstName').textContent = testData.first_name;
+                document.getElementById('lastName').textContent = testData.last_name;
+                document.getElementById('username').textContent = testData.username;
+                
+                // Show test data was applied
+                const now = new Date();
+                document.getElementById('urlParams').textContent = JSON.stringify({
+                    testDataApplied: true,
+                    timestamp: now.toISOString(),
+                    testUser: testData
+                }, null, 2);
+            });
+            
+            // Update debug info
+            document.getElementById('currentUrl').textContent = window.location.href;
+            document.getElementById('rawQueryString').textContent = window.location.search;
+        });
+    </script>
 </body>
 </html>

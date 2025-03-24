@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Current URL</title>
+    <script>
+        function displayURL() {
+            // Get the current URL using window.location.href
+            const currentURL = window.location.href;
+
+            // Get the element where the URL will be displayed
+            const urlDisplayElement = document.getElementById("urlDisplay");
+
+            // Check if the element exists
+            if (urlDisplayElement) {
+                // Set the text content of the element to the current URL
+                urlDisplayElement.textContent = "The current URL is: " + currentURL;
+            } else {
+                console.error("Element with id 'urlDisplay' not found!");
+            }
+        }
+    </script>
+    <style>
+      body {
+        font-family: sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f0f0f0;
+        margin: 0; /* Reset default body margin */
+      }
+
+      .container {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+
+      #urlDisplay {
+        font-size: 16px;
+        color: #333;
+        word-wrap: break-word; /* Handle long URLs */
+        margin-top: 10px;
+      }
+    </style>
+</head>
+<body onload="displayURL()">
+    <div class="container">
+        <h1 class="title">Current URL</h1>
+        <p id="urlDisplay">Loading URL...</p>
+    </div>
+</body>
+</html>

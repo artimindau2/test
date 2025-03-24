@@ -282,7 +282,97 @@
                     document.getElementById('userId').textContent = user.id || 'Not available';
                     document.getElementById('firstName').textContent = user.first_name || 'Not available';
                     document.getElementById('lastName').textContent = user.last_name || 'Not available';
-                    document.getElementById('username').textContent = user.username || 'Not available';
+                    document.getElementById('username').textContent = user.username || '(No username)';
+                    
+                    // Add additional fields
+                    const additionalFields = document.getElementById('additionalFields');
+                    additionalFields.innerHTML = ''; // Clear existing fields
+                    
+                    // Add language code if available
+                    if (user.language_code) {
+                        const langRow = document.createElement('div');
+                        langRow.className = 'info-row';
+                        langRow.innerHTML = `
+                            <div class="label">Language:</div>
+                            <div class="value">${user.language_code}</div>
+                        `;
+                        additionalFields.appendChild(langRow);
+                    }
+                    
+                    // Add premium status if available
+                    if (user.hasOwnProperty('is_premium')) {
+                        const premiumRow = document.createElement('div');
+                        premiumRow.className = 'info-row';
+                        premiumRow.innerHTML = `
+                            <div class="label">Premium:</div>
+                            <div class="value">${user.is_premium ? 'Yes' : 'No'}</div>
+                        `;
+                        additionalFields.appendChild(premiumRow);
+                    }
+                    
+                    // Add photo URL if available
+                    if (user.photo_url) {
+                        const photoRow = document.createElement('div');
+                        photoRow.className = 'info-row';
+                        photoRow.innerHTML = `
+                            <div class="label">Photo:</div>
+                            <div class="value">
+                                <a href="${user.photo_url}" target="_blank" style="word-break: break-all; font-size: 12px;">
+                                    ${user.photo_url}
+                                </a>
+                            </div>
+                        `;
+                        additionalFields.appendChild(photoRow);
+                    }
+                    
+                    // Add platform info
+                    const platformRow = document.createElement('div');
+                    platformRow.className = 'info-row';
+                    platformRow.innerHTML = `
+                        <div class="label">Platform:</div>
+                        <div class="value">${webApp.platform}</div>
+                    `;
+                    additionalFields.appendChild(platformRow);
+                    
+                    // Add client-side visitor information
+                    // IP Address
+                    const ipRow = document.createElement('div');
+                    ipRow.className = 'info-row';
+                    ipRow.innerHTML = `
+                        <div class="label">Visitor IP:</div>
+                        <div class="value" id="visitorIp">Loading...</div>
+                    `;
+                    additionalFields.appendChild(ipRow);
+                    
+                    // User Agent
+                    const uaRow = document.createElement('div');
+                    uaRow.className = 'info-row';
+                    uaRow.innerHTML = `
+                        <div class="label">User Agent:</div>
+                        <div class="value">${navigator.userAgent}</div>
+                    `;
+                    additionalFields.appendChild(uaRow);
+                    
+                    // Timezone
+                    const tzRow = document.createElement('div');
+                    tzRow.className = 'info-row';
+                    tzRow.innerHTML = `
+                        <div class="label">Timezone:</div>
+                        <div class="value">${Intl.DateTimeFormat().resolvedOptions().timeZone} (UTC${-new Date().getTimezoneOffset()/60 > 0 ? '+' : ''}${-new Date().getTimezoneOffset()/60})</div>
+                    `;
+                    additionalFields.appendChild(tzRow);
+                    
+                    // Try to get IP address using a third-party service
+                    fetch('https://api.ipify.org?format=json')
+                        .then(response => response.json())
+                        .then(data => {
+                            document.getElementById('visitorIp').textContent = data.ip;
+                        })
+                        .catch(error => {
+                            document.getElementById('visitorIp').textContent = 'Not available (blocked by browser)';
+                        });
+                    
+                    document.getElementById('error').style.display = 'none';
                 } else {
                     // Handle case when user data is not available
                     document.getElementById('error').style.display = 'block';
@@ -369,20 +459,54 @@
                                         additionalFields.appendChild(premiumRow);
                                     }
                                     
-                                    // Add photo URL if available
-                                    if (userData.photo_url) {
-                                        const photoRow = document.createElement('div');
-                                        photoRow.className = 'info-row';
-                                        photoRow.innerHTML = `
-                                            <div class="label">Photo:</div>
-                                            <div class="value">
-                                                <a href="${userData.photo_url}" target="_blank" style="word-break: break-all; font-size: 12px;">
-                                                    ${userData.photo_url}
-                                                </a>
-                                            </div>
+                                    // Add other Telegram Web App data
+                                    if (allParams.hash.tgWebAppPlatform) {
+                                        const platformRow = document.createElement('div');
+                                        platformRow.className = 'info-row';
+                                        platformRow.innerHTML = `
+                                            <div class="label">Platform:</div>
+                                            <div class="value">${allParams.hash.tgWebAppPlatform}</div>
                                         `;
-                                        additionalFields.appendChild(photoRow);
+                                        additionalFields.appendChild(platformRow);
                                     }
+                                    
+                                    // Add client-side visitor information
+                                    // IP Address (Using a placeholder since client-side JS can't get the real IP)
+                                    const ipRow = document.createElement('div');
+                                    ipRow.className = 'info-row';
+                                    ipRow.innerHTML = `
+                                        <div class="label">Visitor IP:</div>
+                                        <div class="value" id="visitorIp">Loading...</div>
+                                    `;
+                                    additionalFields.appendChild(ipRow);
+                                    
+                                    // User Agent
+                                    const uaRow = document.createElement('div');
+                                    uaRow.className = 'info-row';
+                                    uaRow.innerHTML = `
+                                        <div class="label">User Agent:</div>
+                                        <div class="value">${navigator.userAgent}</div>
+                                    `;
+                                    additionalFields.appendChild(uaRow);
+                                    
+                                    // Timezone
+                                    const tzRow = document.createElement('div');
+                                    tzRow.className = 'info-row';
+                                    tzRow.innerHTML = `
+                                        <div class="label">Timezone:</div>
+                                        <div class="value">${Intl.DateTimeFormat().resolvedOptions().timeZone} (UTC${-new Date().getTimezoneOffset()/60 > 0 ? '+' : ''}${-new Date().getTimezoneOffset()/60})</div>
+                                    `;
+                                    additionalFields.appendChild(tzRow);
+                                    
+                                    // Try to get IP address using a third-party service
+                                    fetch('https://api.ipify.org?format=json')
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            document.getElementById('visitorIp').textContent = data.ip;
+                                        })
+                                        .catch(error => {
+                                            document.getElementById('visitorIp').textContent = 'Not available (blocked by browser)';
+                                        });
                                 }
                             } catch (e) {
                                 console.error('Error parsing user JSON:', e);
@@ -488,6 +612,43 @@
                         `;
                         additionalFields.appendChild(photoRow);
                     }
+                    
+                    // Add platform info
+                    const platformRow = document.createElement('div');
+                    platformRow.className = 'info-row';
+                    platformRow.innerHTML = `
+                        <div class="label">Platform:</div>
+                        <div class="value">tdesktop (Test Data)</div>
+                    `;
+                    additionalFields.appendChild(platformRow);
+                    
+                    // Add client-side visitor information
+                    // IP Address
+                    const ipRow = document.createElement('div');
+                    ipRow.className = 'info-row';
+                    ipRow.innerHTML = `
+                        <div class="label">Visitor IP:</div>
+                        <div class="value">Loading...</div>
+                    `;
+                    additionalFields.appendChild(ipRow);
+                    
+                    // User Agent
+                    const uaRow = document.createElement('div');
+                    uaRow.className = 'info-row';
+                    uaRow.innerHTML = `
+                        <div class="label">User Agent:</div>
+                        <div class="value">${navigator.userAgent}</div>
+                    `;
+                    additionalFields.appendChild(uaRow);
+                    
+                    // Timezone
+                    const tzRow = document.createElement('div');
+                    tzRow.className = 'info-row';
+                    tzRow.innerHTML = `
+                        <div class="label">Timezone:</div>
+                        <div class="value">${Intl.DateTimeFormat().resolvedOptions().timeZone} (UTC${-new Date().getTimezoneOffset()/60 > 0 ? '+' : ''}${-new Date().getTimezoneOffset()/60})</div>
+                    `;
+                    additionalFields.appendChild(tzRow);
                     
                     // Show test data was applied
                     const now = new Date();

@@ -124,6 +124,9 @@
                 <div class="label">Username:</div>
                 <div id="username" class="value">-</div>
             </div>
+            <div id="additionalFields">
+                <!-- Additional user fields will be inserted here by the script -->
+            </div>
             <div class="info-row params-row">
                 <div class="label">URL Params:</div>
                 <div id="urlParams" class="params-value">-</div>
@@ -321,8 +324,8 @@
                         console.log('Found tgWebAppData parameter in hash, attempting to parse');
                         const webAppData = allParams.hash.tgWebAppData;
                         
-                        // Extract user data from tgWebAppData
-                        const userMatch = webAppData.match(/user%3D([^&]+)/);
+                        // Extract user data from tgWebAppData - using regex to find the user data
+                        const userMatch = webAppData.match(/user=([^&]+)/);
                         if (userMatch && userMatch[1]) {
                             const encodedUserData = userMatch[1];
                             const decodedUserData = decodeURIComponent(encodedUserData);
@@ -333,20 +336,53 @@
                                 console.log('Parsed user data:', userData);
                                 
                                 if (userData) {
+                                    // Update the user info fields
                                     document.getElementById('userId').textContent = userData.id || 'Not available';
                                     document.getElementById('firstName').textContent = userData.first_name || 'Not available';
                                     document.getElementById('lastName').textContent = userData.last_name || 'Not available';
-                                    document.getElementById('username').textContent = userData.username || 'Not available';
+                                    document.getElementById('username').textContent = userData.username || '(No username)';
                                     document.getElementById('error').style.display = 'none';
                                     
-                                    // Show all user data for debugging
-                                    const allUserData = document.createElement('div');
-                                    allUserData.className = 'params-row';
-                                    allUserData.innerHTML = `
-                                        <div class="label">All User Data:</div>
-                                        <div class="params-value">${JSON.stringify(userData, null, 2)}</div>
-                                    `;
-                                    document.getElementById('userInfo').appendChild(allUserData);
+                                    // Create additional fields for other user data
+                                    const additionalFields = document.getElementById('additionalFields');
+                                    additionalFields.innerHTML = ''; // Clear existing fields
+                                    
+                                    // Add language code if available
+                                    if (userData.language_code) {
+                                        const langRow = document.createElement('div');
+                                        langRow.className = 'info-row';
+                                        langRow.innerHTML = `
+                                            <div class="label">Language:</div>
+                                            <div class="value">${userData.language_code}</div>
+                                        `;
+                                        additionalFields.appendChild(langRow);
+                                    }
+                                    
+                                    // Add premium status if available
+                                    if (userData.hasOwnProperty('is_premium')) {
+                                        const premiumRow = document.createElement('div');
+                                        premiumRow.className = 'info-row';
+                                        premiumRow.innerHTML = `
+                                            <div class="label">Premium:</div>
+                                            <div class="value">${userData.is_premium ? 'Yes' : 'No'}</div>
+                                        `;
+                                        additionalFields.appendChild(premiumRow);
+                                    }
+                                    
+                                    // Add photo URL if available
+                                    if (userData.photo_url) {
+                                        const photoRow = document.createElement('div');
+                                        photoRow.className = 'info-row';
+                                        photoRow.innerHTML = `
+                                            <div class="label">Photo:</div>
+                                            <div class="value">
+                                                <a href="${userData.photo_url}" target="_blank" style="word-break: break-all; font-size: 12px;">
+                                                    ${userData.photo_url}
+                                                </a>
+                                            </div>
+                                        `;
+                                        additionalFields.appendChild(photoRow);
+                                    }
                                 }
                             } catch (e) {
                                 console.error('Error parsing user JSON:', e);
@@ -355,6 +391,8 @@
                             }
                         } else {
                             console.log('No user data found in tgWebAppData');
+                            document.getElementById('error').style.display = 'block';
+                            document.getElementById('error').textContent = 'No user data found in tgWebAppData';
                         }
                     } catch (e) {
                         console.error('Error processing tgWebAppData:', e);
@@ -390,28 +428,75 @@
                 });
             }
             
-            // Add test button functionality
-            document.getElementById('testParamsButton').addEventListener('click', function() {
-                const testData = {
-                    id: 987654321,
-                    first_name: "Test",
-                    last_name: "User",
-                    username: "testuser"
-                };
-                
-                document.getElementById('userId').textContent = testData.id;
-                document.getElementById('firstName').textContent = testData.first_name;
-                document.getElementById('lastName').textContent = testData.last_name;
-                document.getElementById('username').textContent = testData.username;
-                
-                // Show test data was applied
-                const now = new Date();
-                document.getElementById('urlParams').textContent = JSON.stringify({
-                    testDataApplied: true,
-                    timestamp: now.toISOString(),
-                    testUser: testData
-                }, null, 2);
-            });
+                // Add test button functionality
+                document.getElementById('testParamsButton').addEventListener('click', function() {
+                    // Sample data based on the provided JSON
+                    const testData = {
+                        id: 503780588,
+                        first_name: "Pooya",
+                        last_name: "Misaghi",
+                        language_code: "en",
+                        is_premium: true,
+                        allows_write_to_pm: true,
+                        photo_url: "https://t.me/i/userpic/320/onOR9H0FqmMWoEeQ8EmYNBiG18m5wyMi9CV_rUtPMXs.svg"
+                    };
+                    
+                    // Update user info fields
+                    document.getElementById('userId').textContent = testData.id;
+                    document.getElementById('firstName').textContent = testData.first_name;
+                    document.getElementById('lastName').textContent = testData.last_name;
+                    document.getElementById('username').textContent = testData.username || '(No username)';
+                    document.getElementById('error').style.display = 'none';
+                    
+                    // Create additional fields for other user data
+                    const additionalFields = document.getElementById('additionalFields');
+                    additionalFields.innerHTML = ''; // Clear existing fields
+                    
+                    // Add language code if available
+                    if (testData.language_code) {
+                        const langRow = document.createElement('div');
+                        langRow.className = 'info-row';
+                        langRow.innerHTML = `
+                            <div class="label">Language:</div>
+                            <div class="value">${testData.language_code}</div>
+                        `;
+                        additionalFields.appendChild(langRow);
+                    }
+                    
+                    // Add premium status if available
+                    if (testData.hasOwnProperty('is_premium')) {
+                        const premiumRow = document.createElement('div');
+                        premiumRow.className = 'info-row';
+                        premiumRow.innerHTML = `
+                            <div class="label">Premium:</div>
+                            <div class="value">${testData.is_premium ? 'Yes' : 'No'}</div>
+                        `;
+                        additionalFields.appendChild(premiumRow);
+                    }
+                    
+                    // Add photo URL if available
+                    if (testData.photo_url) {
+                        const photoRow = document.createElement('div');
+                        photoRow.className = 'info-row';
+                        photoRow.innerHTML = `
+                            <div class="label">Photo:</div>
+                            <div class="value">
+                                <a href="${testData.photo_url}" target="_blank" style="word-break: break-all; font-size: 12px;">
+                                    ${testData.photo_url}
+                                </a>
+                            </div>
+                        `;
+                        additionalFields.appendChild(photoRow);
+                    }
+                    
+                    // Show test data was applied
+                    const now = new Date();
+                    document.getElementById('urlParams').textContent = JSON.stringify({
+                        testDataApplied: true,
+                        timestamp: now.toISOString(),
+                        testUser: testData
+                    }, null, 2);
+                });
             
             // Update debug info
             document.getElementById('currentUrl').textContent = window.location.href;

@@ -133,36 +133,60 @@
         <button id="mainButton" class="button">Close</button>
     </div>
 
-    <div id="debugInfo" style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px;">
-        <h3>Debugging Info</h3>
-        <p>Current URL: <span id="currentUrl">-</span></p>
-        <p>Raw Query String: <span id="rawQueryString">-</span></p>
-        <button id="testParamsButton" class="button" style="margin-top: 10px; background-color: #555;">Test Parameters</button>
-    </div>
+        <div id="debugInfo" style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; max-width: 500px;">
+            <h3>Debugging Info</h3>
+            <p>Current URL: <span id="currentUrl" style="word-break: break-all; font-size: 12px; font-family: monospace;">-</span></p>
+            <p>Raw Hash String:</p>
+            <div id="rawQueryString" style="word-break: break-all; font-size: 12px; font-family: monospace; background: rgba(0,0,0,0.05); padding: 8px; max-height: 120px; overflow: auto;">-</div>
+            <button id="testParamsButton" class="button" style="margin-top: 10px; background-color: #555;">Test Parameters</button>
+        </div>
 
     <script>
         // Debug function to check URL parameters
         function debugUrlParams() {
-            // Log the full URL and raw search string
+            // Log the full URL and raw hash string
             console.log('Current URL:', window.location.href);
-            console.log('Raw search string:', window.location.search);
+            console.log('Raw hash string:', window.location.hash);
             
-            try {
-                // Parse URL parameters
-                const urlSearchParams = new URLSearchParams(window.location.search);
-                const params = Object.fromEntries(urlSearchParams.entries());
-                console.log('Parsed parameters:', params);
-                
-                // Log each parameter individually
-                for (const [key, value] of urlSearchParams.entries()) {
-                    console.log(`Parameter: ${key} = ${value}`);
+            // Extract parameters from hash (Telegram uses hash instead of query)
+            const hashParams = {};
+            
+            if (window.location.hash) {
+                try {
+                    // Parse the hash part of the URL (remove the leading '#')
+                    const hashString = window.location.hash.substring(1);
+                    console.log('Hash string:', hashString);
+                    
+                    // Split by '&' to get key-value pairs
+                    const pairs = hashString.split('&');
+                    for (const pair of pairs) {
+                        const [key, value] = pair.split('=');
+                        if (key && value) {
+                            hashParams[key] = decodeURIComponent(value);
+                        }
+                    }
+                    
+                    console.log('Parsed hash parameters:', hashParams);
+                } catch (e) {
+                    console.error('Error parsing hash parameters:', e);
                 }
-                
-                return params;
-            } catch (e) {
-                console.error('Error parsing URL parameters:', e);
-                return {};
             }
+            
+            // Also check regular query parameters
+            const queryParams = {};
+            if (window.location.search) {
+                try {
+                    const urlSearchParams = new URLSearchParams(window.location.search);
+                    for (const [key, value] of urlSearchParams.entries()) {
+                        queryParams[key] = value;
+                    }
+                    console.log('Parsed query parameters:', queryParams);
+                } catch (e) {
+                    console.error('Error parsing URL parameters:', e);
+                }
+            }
+            
+            return { hash: hashParams, query: queryParams };
         }
         
         // Function to parse and handle initData
@@ -225,7 +249,11 @@
         
         document.addEventListener('DOMContentLoaded', function() {
             // Get and display URL parameters
-            const urlParams = debugUrlParams();
+            const allParams = debugUrlParams();
+            
+            // Update debug info
+            document.getElementById('currentUrl').textContent = window.location.href;
+            document.getElementById('rawQueryString').textContent = window.location.hash.substring(1);
             
             // Check if running inside Telegram WebApp
             if (window.Telegram && window.Telegram.WebApp) {
@@ -282,13 +310,62 @@
                 
                 // For testing purposes outside Telegram
                 // Display all URL parameters in a more readable format
-                document.getElementById('urlParams').textContent = JSON.stringify(urlParams, null, 2);
+                document.getElementById('urlParams').textContent = JSON.stringify({
+                    hash: allParams.hash,
+                    query: allParams.query
+                }, null, 2);
                 
-                // Try to handle initData parameter if present
-                if (urlParams.initData) {
+                // Try to handle tgWebAppData parameter if present
+                if (allParams.hash.tgWebAppData) {
                     try {
-                        console.log('Found initData parameter, attempting to parse');
-                        const userData = parseInitData(urlParams.initData);
+                        console.log('Found tgWebAppData parameter in hash, attempting to parse');
+                        const webAppData = allParams.hash.tgWebAppData;
+                        
+                        // Extract user data from tgWebAppData
+                        const userMatch = webAppData.match(/user%3D([^&]+)/);
+                        if (userMatch && userMatch[1]) {
+                            const encodedUserData = userMatch[1];
+                            const decodedUserData = decodeURIComponent(encodedUserData);
+                            console.log('Decoded user data:', decodedUserData);
+                            
+                            try {
+                                const userData = JSON.parse(decodedUserData);
+                                console.log('Parsed user data:', userData);
+                                
+                                if (userData) {
+                                    document.getElementById('userId').textContent = userData.id || 'Not available';
+                                    document.getElementById('firstName').textContent = userData.first_name || 'Not available';
+                                    document.getElementById('lastName').textContent = userData.last_name || 'Not available';
+                                    document.getElementById('username').textContent = userData.username || 'Not available';
+                                    document.getElementById('error').style.display = 'none';
+                                    
+                                    // Show all user data for debugging
+                                    const allUserData = document.createElement('div');
+                                    allUserData.className = 'params-row';
+                                    allUserData.innerHTML = `
+                                        <div class="label">All User Data:</div>
+                                        <div class="params-value">${JSON.stringify(userData, null, 2)}</div>
+                                    `;
+                                    document.getElementById('userInfo').appendChild(allUserData);
+                                }
+                            } catch (e) {
+                                console.error('Error parsing user JSON:', e);
+                                document.getElementById('error').style.display = 'block';
+                                document.getElementById('error').textContent = 'Error parsing user data: ' + e.message;
+                            }
+                        } else {
+                            console.log('No user data found in tgWebAppData');
+                        }
+                    } catch (e) {
+                        console.error('Error processing tgWebAppData:', e);
+                        document.getElementById('error').style.display = 'block';
+                        document.getElementById('error').textContent = 'Error parsing tgWebAppData: ' + e.message;
+                    }
+                } else if (allParams.hash.initData) {
+                    // Try to handle initData parameter if present
+                    try {
+                        console.log('Found initData parameter in hash, attempting to parse');
+                        const userData = parseInitData(allParams.hash.initData);
                         console.log('Parsed user data:', userData);
                         
                         if (userData) {
@@ -304,7 +381,7 @@
                         document.getElementById('error').textContent = 'Error parsing initData: ' + e.message;
                     }
                 } else {
-                    console.log('No initData parameter found in URL');
+                    console.log('No initData or tgWebAppData parameter found in URL hash');
                 }
                 
                 // Mock data for testing outside Telegram

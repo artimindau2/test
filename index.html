@@ -33,6 +33,41 @@
             margin-bottom: 20px;
         }
         
+        .user-profile {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border-radius: 10px;
+        }
+        
+        .profile-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+            border: 2px solid var(--tg-theme-button-color, #2AABEE);
+        }
+        
+        .profile-info {
+            flex: 1;
+        }
+        
+        .profile-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0 0 5px 0;
+            color: var(--tg-theme-text-color, #000000);
+        }
+        
+        .profile-username {
+            font-size: 14px;
+            color: var(--tg-theme-hint-color, #999999);
+            margin: 0;
+        }
+        
         .user-info {
             margin-bottom: 20px;
         }
@@ -105,6 +140,14 @@
         
         <div id="error" class="error">
             Not launched inside Telegram
+        </div>
+        
+        <div class="user-profile" id="userProfile">
+            <img id="profileImage" src="/api/placeholder/80/80" alt="Profile" class="profile-image">
+            <div class="profile-info">
+                <h2 id="profileName" class="profile-name">-</h2>
+                <p id="profileUsername" class="profile-username">@-</p>
+            </div>
         </div>
         
         <div id="userInfo" class="user-info">
@@ -278,6 +321,15 @@
                 }, null, 2) || 'No Telegram data available';
                 
                 if (user) {
+                    // Update profile section
+                    document.getElementById('profileName').textContent = `${user.first_name} ${user.last_name || ''}`.trim();
+                    document.getElementById('profileUsername').textContent = user.username ? `@${user.username}` : '';
+                    
+                    // Update profile image if available
+                    if (user.photo_url) {
+                        document.getElementById('profileImage').src = user.photo_url;
+                    }
+                    
                     // Display user information
                     document.getElementById('userId').textContent = user.id || 'Not available';
                     document.getElementById('firstName').textContent = user.first_name || 'Not available';
@@ -426,6 +478,15 @@
                                 console.log('Parsed user data:', userData);
                                 
                                 if (userData) {
+                                    // Update profile section
+                                    document.getElementById('profileName').textContent = `${userData.first_name} ${userData.last_name || ''}`.trim();
+                                    document.getElementById('profileUsername').textContent = userData.username ? `@${userData.username}` : '';
+                                    
+                                    // Update profile image if available
+                                    if (userData.photo_url) {
+                                        document.getElementById('profileImage').src = userData.photo_url;
+                                    }
+                                    
                                     // Update the user info fields
                                     document.getElementById('userId').textContent = userData.id || 'Not available';
                                     document.getElementById('firstName').textContent = userData.first_name || 'Not available';
@@ -564,6 +625,15 @@
                         allows_write_to_pm: true,
                         photo_url: "https://t.me/i/userpic/320/onOR9H0FqmMWoEeQ8EmYNBiG18m5wyMi9CV_rUtPMXs.svg"
                     };
+                    
+                    // Update profile section
+                    document.getElementById('profileName').textContent = `${testData.first_name} ${testData.last_name || ''}`.trim();
+                    document.getElementById('profileUsername').textContent = testData.username ? `@${testData.username}` : '';
+                    
+                    // Update profile image if available
+                    if (testData.photo_url) {
+                        document.getElementById('profileImage').src = testData.photo_url;
+                    }
                     
                     // Update user info fields
                     document.getElementById('userId').textContent = testData.id;

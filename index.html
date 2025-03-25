@@ -168,14 +168,16 @@
                 <div id="username" class="value">-</div>
             </div>
             <div id="additionalFields">
-                </div>
+                <!-- Additional user fields will be inserted here by the script -->
+            </div>
             <div class="info-row params-row">
                 <div class="label">URL Params:</div>
                 <div id="urlParams" class="params-value">-</div>
             </div>
         </div>
         
-        <a href="https://t.me/test575757bot/testttt?startapp=GJvnqIO03Ky6Wfj" class="button">Open Telegram App</a>  </div>
+        <button id="mainButton" class="button">Close</button>
+    </div>
 
         <div id="debugInfo" style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; max-width: 500px;">
             <h3>Debugging Info</h3>
@@ -612,4 +614,125 @@
             }
             
                 // Add test button functionality
-                document.getElementByI
+                document.getElementById('testParamsButton').addEventListener('click', function() {
+                    // Sample data based on the provided JSON
+                    const testData = {
+                        id: 503780588,
+                        first_name: "Pooya",
+                        last_name: "Misaghi",
+                        language_code: "en",
+                        is_premium: true,
+                        allows_write_to_pm: true,
+                        photo_url: "https://t.me/i/userpic/320/onOR9H0FqmMWoEeQ8EmYNBiG18m5wyMi9CV_rUtPMXs.svg"
+                    };
+                    
+                    // Update profile section
+                    document.getElementById('profileName').textContent = `${testData.first_name} ${testData.last_name || ''}`.trim();
+                    document.getElementById('profileUsername').textContent = testData.username ? `@${testData.username}` : '';
+                    
+                    // Update profile image if available
+                    if (testData.photo_url) {
+                        document.getElementById('profileImage').src = testData.photo_url;
+                    }
+                    
+                    // Update user info fields
+                    document.getElementById('userId').textContent = testData.id;
+                    document.getElementById('firstName').textContent = testData.first_name;
+                    document.getElementById('lastName').textContent = testData.last_name;
+                    document.getElementById('username').textContent = testData.username || '(No username)';
+                    document.getElementById('error').style.display = 'none';
+                    
+                    // Create additional fields for other user data
+                    const additionalFields = document.getElementById('additionalFields');
+                    additionalFields.innerHTML = ''; // Clear existing fields
+                    
+                    // Add language code if available
+                    if (testData.language_code) {
+                        const langRow = document.createElement('div');
+                        langRow.className = 'info-row';
+                        langRow.innerHTML = `
+                            <div class="label">Language:</div>
+                            <div class="value">${testData.language_code}</div>
+                        `;
+                        additionalFields.appendChild(langRow);
+                    }
+                    
+                    // Add premium status if available
+                    if (testData.hasOwnProperty('is_premium')) {
+                        const premiumRow = document.createElement('div');
+                        premiumRow.className = 'info-row';
+                        premiumRow.innerHTML = `
+                            <div class="label">Premium:</div>
+                            <div class="value">${testData.is_premium ? 'Yes' : 'No'}</div>
+                        `;
+                        additionalFields.appendChild(premiumRow);
+                    }
+                    
+                    // Add photo URL if available
+                    if (testData.photo_url) {
+                        const photoRow = document.createElement('div');
+                        photoRow.className = 'info-row';
+                        photoRow.innerHTML = `
+                            <div class="label">Photo:</div>
+                            <div class="value">
+                                <a href="${testData.photo_url}" target="_blank" style="word-break: break-all; font-size: 12px;">
+                                    ${testData.photo_url}
+                                </a>
+                            </div>
+                        `;
+                        additionalFields.appendChild(photoRow);
+                    }
+                    
+                    // Add platform info
+                    const platformRow = document.createElement('div');
+                    platformRow.className = 'info-row';
+                    platformRow.innerHTML = `
+                        <div class="label">Platform:</div>
+                        <div class="value">tdesktop (Test Data)</div>
+                    `;
+                    additionalFields.appendChild(platformRow);
+                    
+                    // Add client-side visitor information
+                    // IP Address
+                    const ipRow = document.createElement('div');
+                    ipRow.className = 'info-row';
+                    ipRow.innerHTML = `
+                        <div class="label">Visitor IP:</div>
+                        <div class="value">Loading...</div>
+                    `;
+                    additionalFields.appendChild(ipRow);
+                    
+                    // User Agent
+                    const uaRow = document.createElement('div');
+                    uaRow.className = 'info-row';
+                    uaRow.innerHTML = `
+                        <div class="label">User Agent:</div>
+                        <div class="value">${navigator.userAgent}</div>
+                    `;
+                    additionalFields.appendChild(uaRow);
+                    
+                    // Timezone
+                    const tzRow = document.createElement('div');
+                    tzRow.className = 'info-row';
+                    tzRow.innerHTML = `
+                        <div class="label">Timezone:</div>
+                        <div class="value">${Intl.DateTimeFormat().resolvedOptions().timeZone} (UTC${-new Date().getTimezoneOffset()/60 > 0 ? '+' : ''}${-new Date().getTimezoneOffset()/60})</div>
+                    `;
+                    additionalFields.appendChild(tzRow);
+                    
+                    // Show test data was applied
+                    const now = new Date();
+                    document.getElementById('urlParams').textContent = JSON.stringify({
+                        testDataApplied: true,
+                        timestamp: now.toISOString(),
+                        testUser: testData
+                    }, null, 2);
+                });
+            
+            // Update debug info
+            document.getElementById('currentUrl').textContent = window.location.href;
+            document.getElementById('rawQueryString').textContent = window.location.search;
+        });
+    </script>
+</body>
+</html>
